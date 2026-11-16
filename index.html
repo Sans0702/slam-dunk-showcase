@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Slam Dunk Showcase - Arcade Basketball Game</title>
+  <meta name="description" content="An arcade web basketball game with realistic physics, procedural audio, skin unlocks, and multiple game modes!" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Background Animated Gradient & Particle Canvas Container -->
+  <div class="game-container" id="gameContainer">
+
+    <!-- Top HUD Bar -->
+    <header class="hud-header">
+      <div class="hud-left">
+        <button class="icon-btn" id="menuBtn" title="Main Menu">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <div class="badge mode-badge" id="hudModeBadge">ARCADE</div>
+      </div>
+
+      <div class="hud-center">
+        <!-- Main Score Counter -->
+        <div class="score-display">
+          <span class="score-label">SCORE</span>
+          <span class="score-val" id="hudScore">0</span>
+        </div>
+
+        <!-- Combo Streak Banner -->
+        <div class="combo-badge hidden" id="hudCombo">
+          <span class="combo-fire">🔥</span>
+          <span id="hudComboText">X2 STREAK</span>
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <!-- Timer or Lives Display -->
+        <div class="hud-stat-box" id="hudTimeBox">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <span id="hudTime">60s</span>
+        </div>
+
+        <!-- Coins -->
+        <div class="hud-stat-box coin-box">
+          <span class="coin-icon">🪙</span>
+          <span id="hudCoins">0</span>
+        </div>
+
+        <!-- Audio Toggle Button -->
+        <button class="icon-btn" id="audioToggleBtn" title="Toggle Sound">
+          <svg id="audioIconOn" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 5L6 9H2v6h4l5 4V5zM15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          <svg id="audioIconOff" class="hidden" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M11 5L6 9H2v6h4l5 4V5zM23 9l-6 6M17 9l6 6"/></svg>
+        </button>
+
+        <!-- Pause Button -->
+        <button class="icon-btn" id="pauseBtn" title="Pause Game">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- In-Game Toast / Score Floating FX Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Power / Angle Shot Guide HUD (Interactive Drag Info) -->
+    <div id="shotGuide" class="shot-guide hidden">
+      <div class="guide-text">DRAG BACK & RELEASE TO SHOOT</div>
+    </div>
+
+    <!-- Wind Gauge (For Trick Shot Mode) -->
+    <div id="windGauge" class="wind-gauge hidden">
+      <span class="wind-icon">💨</span>
+      <span id="windText">WIND: 0 MPH</span>
+    </div>
+
+  </div> <!-- End Game Container -->
+
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- 1. Main Menu & Mode Selection Modal -->
+  <div class="modal-overlay" id="mainMenuModal">
+    <div class="modal-card main-menu-card">
+      <div class="game-logo">
+        <div class="logo-icon">🏀</div>
+        <h1>SLAM DUNK <span>SHOWCASE</span></h1>
+        <p class="subtitle">Arcade Physics Basketball Challenge</p>
+      </div>
+
+      <div class="mode-selection-grid">
+        <div class="mode-card active" data-mode="arcade">
+          <div class="mode-icon">⚡</div>
+          <h3>Arcade 60s</h3>
+          <p>Score maximum points in 60 seconds. Swishes add +3s extra time!</p>
+          <div class="mode-best">Best: <span id="bestArcade">0</span></div>
+        </div>
+
+        <div class="mode-card" data-mode="suddenDeath">
+          <div class="mode-icon">💀</div>
+          <h3>Sudden Death</h3>
+          <p>You have 3 lives. Miss a shot and lose a life. Build high streaks!</p>
+          <div class="mode-best">Best: <span id="bestSudden">0</span></div>
+        </div>
+
+        <div class="mode-card" data-mode="movingHoop">
+          <div class="mode-icon">🎯</div>
+          <h3>Moving Hoop</h3>
+          <p>The basket shifts position after every shot. Precise aiming required!</p>
+          <div class="mode-best">Best: <span id="bestMoving">0</span></div>
+        </div>
+
+        <div class="mode-card" data-mode="trickShot">
+          <div class="mode-icon">🌪️</div>
+          <h3>Trick Shot</h3>
+          <p>Battle dynamic wind gusts and moving obstacles on the court!</p>
+          <div class="mode-best">Best: <span id="bestTrick">0</span></div>
+        </div>
+      </div>
+
+      <div class="menu-actions">
+        <button class="btn btn-primary btn-play" id="startGameBtn">PLAY NOW 🏀</button>
+        <div class="btn-group">
+          <button class="btn btn-secondary" id="shopBtn">🛒 SHOP & SKINS</button>
+          <button class="btn btn-secondary" id="achievementsBtn">🏆 ACHIEVEMENTS</button>
+          <button class="btn btn-secondary" id="howToPlayBtn">❓ HOW TO PLAY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 2. Shop & Skins Modal -->
+  <div class="modal-overlay hidden" id="shopModal">
+    <div class="modal-card shop-card">
+      <div class="modal-header">
+        <h2>🏀 LOCKER ROOM & SHOP</h2>
+        <div class="coins-badge">
+          <span>🪙</span> <span id="shopCoinsVal">0</span>
+        </div>
+        <button class="close-modal-btn" id="closeShopBtn">&times;</button>
+      </div>
+
+      <div class="shop-tabs">
+        <button class="shop-tab active" data-tab="balls">BALL SKINS</button>
+        <button class="shop-tab" data-tab="courts">COURT THEMES</button>
+      </div>
+
+      <!-- Ball Skins Grid -->
+      <div class="shop-grid" id="ballSkinsGrid"></div>
+
+      <!-- Court Themes Grid -->
+      <div class="shop-grid hidden" id="courtThemesGrid"></div>
+    </div>
+  </div>
+
+
+  <!-- 3. Achievements Modal -->
+  <div class="modal-overlay hidden" id="achievementsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>🏆 ACHIEVEMENTS</h2>
+        <button class="close-modal-btn" id="closeAchievementsBtn">&times;</button>
+      </div>
+      <div class="achievements-list" id="achievementsList"></div>
+    </div>
+  </div>
+
+
+  <!-- 4. How To Play Modal -->
+  <div class="modal-overlay hidden" id="howToPlayModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>❓ HOW TO PLAY</h2>
+        <button class="close-modal-btn" id="closeHowToPlayBtn">&times;</button>
+      </div>
+      <div class="instructions-body">
+        <div class="step-item">
+          <div class="step-num">1</div>
+          <p><strong>Aiming:</strong> Click/touch and drag back on the basketball to adjust angle and shot power. The arc guide shows your trajectory.</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">2</div>
+          <p><strong>Release:</strong> Let go to shoot! Aim for clean swishes without hitting the rim for bonus points (+3 pts & streak boost).</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">3</div>
+          <p><strong>Combos:</strong> Score consecutive buckets to build your 🔥 Multiplier (up to x4 Score!).</p>
+        </div>
+        <div class="step-item">
+          <div class="step-num">4</div>
+          <p><strong>Coins:</strong> Earn coins from high scores and swishes to unlock legendary ball skins and neon courts in the Locker Room!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 5. Pause Modal -->
+  <div class="modal-overlay hidden" id="pauseModal">
+    <div class="modal-card pause-card">
+      <h2>⏸️ GAME PAUSED</h2>
+      <div class="pause-actions">
+        <button class="btn btn-primary" id="resumeBtn">RESUME GAME</button>
+        <button class="btn btn-secondary" id="restartPauseBtn">RESTART SHOT</button>
+        <button class="btn btn-secondary" id="quitPauseBtn">MAIN MENU</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 6. Game Over Modal -->
+  <div class="modal-overlay hidden" id="gameOverModal">
+    <div class="modal-card gameover-card">
+      <div class="new-highscore-banner hidden" id="highScoreBanner">🌟 NEW HIGH SCORE! 🌟</div>
+      <h2>GAME OVER</h2>
+
+      <div class="final-score-box">
+        <span class="final-label">FINAL SCORE</span>
+        <span class="final-score-val" id="finalScoreVal">0</span>
+      </div>
+
+      <div class="gameover-stats-grid">
+        <div class="stat-cell">
+          <span class="stat-title">Shots Made</span>
+          <span class="stat-value" id="statShotsMade">0 / 0</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-title">Swishes</span>
+          <span class="stat-value" id="statSwishes">0</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-title">Accuracy</span>
+          <span class="stat-value" id="statAccuracy">0%</span>
+        </div>
+        <div class="stat-cell">
+          <span class="stat-title">Max Streak</span>
+          <span class="stat-value" id="statMaxStreak">0🔥</span>
+        </div>
+      </div>
+
+      <div class="earned-coins">
+        <span>Coins Earned:</span>
+        <span class="earned-val">+<span id="earnedCoinsVal">0</span> 🪙</span>
+      </div>
+
+      <div class="gameover-actions">
+        <button class="btn btn-primary btn-play" id="playAgainBtn">PLAY AGAIN 🏀</button>
+        <button class="btn btn-secondary" id="menuGameoverBtn">MAIN MENU</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Files -->
+  <script src="audio.js"></script>
+  <script src="physics.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
